@@ -1,7 +1,6 @@
 package model
 
 import (
-	"errors"
 	"time"
 
 	"gorm.io/gorm"
@@ -31,41 +30,4 @@ func (a *Article) BeforeCreate(tx *gorm.DB) error {
 func (a *Article) BeforeUpdate(tx *gorm.DB) error {
 	tx.Statement.SetColumn("ModifiedOn", time.Now().Unix())
 	return nil
-}
-
-func GetArticlesPage(pageNum int, pageSize int) (as []Article) {
-	db.Preload("Tag").Offset(pageNum).Limit(pageSize).Find(&as)
-	return
-}
-
-func GetArticlesCount() int {
-	var count int64
-	db.Model(&Article{}).Count(&count)
-	return int(count)
-}
-
-func GetArticleById(id int) (a Article) {
-	db.First(&a)
-	return
-}
-
-func CheckArticlExistById(id int) bool {
-	err := db.First(&Article{}, id).Error
-	return !errors.Is(err, gorm.ErrRecordNotFound)
-}
-
-func AddArticle(article Article) bool {
-	db.Create(&article)
-	return true
-}
-
-func UpdateArticle(id int, article Article) bool {
-	article.ID = id
-	db.Model(&article).Updates(&article)
-	return true
-}
-
-func DeleteArticle(id int) bool {
-	db.Delete(&Article{}, id)
-	return true
 }

@@ -9,6 +9,7 @@ import (
 	"github.com/yu1er/gin-blog/model"
 	"github.com/yu1er/gin-blog/pkg/e"
 	"github.com/yu1er/gin-blog/pkg/utils"
+	"github.com/yu1er/gin-blog/service"
 )
 
 // GET 		/tags	获取所有tag
@@ -33,8 +34,8 @@ func GetTags(c *gin.Context) {
 		maps["state"] = state
 	}
 
-	data["list"] = model.GetTagsPage(utils.GetPage(c), config.PageSize, maps)
-	data["total"] = model.GetTagsCount(maps)
+	data["list"] = service.GetTagsPage(utils.GetPage(c), config.PageSize, maps)
+	data["total"] = service.GetTagsCount(maps)
 
 	c.JSON(http.StatusOK, gin.H{
 		"code": e.SUCCESS,
@@ -48,7 +49,7 @@ func GetTagById(c *gin.Context) {
 	var code int
 	id, _ := strconv.Atoi(c.Param("id"))
 
-	t := model.GetTagById(id)
+	t := service.GetTagById(id)
 	if t.ID > 0 {
 		code = e.SUCCESS
 	} else {
@@ -78,11 +79,11 @@ func AddTag(c *gin.Context) {
 	err := validate.Struct(tag)
 	if err != nil {
 		code = e.INVALID_PARAMS
-	} else if model.CheckTagExistByName(name) {
+	} else if service.CheckTagExistByName(name) {
 		code = e.ERROR_TAT_EXIST
 	} else {
 		code = e.SUCCESS
-		model.AddTag(name, state, createdBy)
+		service.AddTag(name, state, createdBy)
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -129,7 +130,7 @@ func UpdateTag(c *gin.Context) {
 		tag.Name = name
 	}
 
-	if modifiedBy := c.Query("modifiedBy"); modifiedBy != "" {
+	if modifiedBy := c.Query("modified_by"); modifiedBy != "" {
 		validate.Var(modifiedBy, "max=100")
 		if err != nil {
 			code = e.ERROR_TAG_MODIFIED_BY_INVALID
@@ -141,9 +142,9 @@ func UpdateTag(c *gin.Context) {
 	err = validate.Struct(tag)
 	if err != nil {
 		code = e.INVALID_PARAMS
-	} else if model.CheckTagExistById(id) {
+	} else if service.CheckTagExistById(id) {
 		code = e.SUCCESS
-		model.UpdateTag(id, tag)
+		service.UpdateTag(id, tag)
 	} else {
 		code = e.ERROR_TAG_NOT_EXIST
 	}
@@ -166,9 +167,9 @@ func DeleteTag(c *gin.Context) {
 		goto response
 	}
 
-	if model.CheckTagExistById(id) {
+	if service.CheckTagExistById(id) {
 		code = e.SUCCESS
-		model.DeleteTag(id)
+		service.DeleteTag(id)
 	} else {
 		code = e.ERROR_TAG_NOT_EXIST
 	}

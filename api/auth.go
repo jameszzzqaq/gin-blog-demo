@@ -8,6 +8,7 @@ import (
 	"github.com/yu1er/gin-blog/model"
 	"github.com/yu1er/gin-blog/pkg/e"
 	"github.com/yu1er/gin-blog/pkg/utils"
+	"github.com/yu1er/gin-blog/service"
 )
 
 func GetAuth(c *gin.Context) {
@@ -25,7 +26,7 @@ func GetAuth(c *gin.Context) {
 		goto response
 	}
 
-	if exist := model.CheckAuth(username, password); exist {
+	if exist := service.CheckAuth(username, password); exist {
 		token, err := utils.GenerateToken(username)
 		if err != nil {
 			code = e.ERROR_AUTH_TOKEN

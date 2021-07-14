@@ -9,13 +9,14 @@ import (
 	"github.com/yu1er/gin-blog/model"
 	"github.com/yu1er/gin-blog/pkg/e"
 	"github.com/yu1er/gin-blog/pkg/utils"
+	"github.com/yu1er/gin-blog/service"
 )
 
 func GetArticles(c *gin.Context) {
 	data := make(map[string]interface{})
 
-	data["list"] = model.GetArticlesPage(utils.GetPage(c), config.PageSize)
-	data["total"] = model.GetArticlesCount()
+	data["list"] = service.GetArticlesPage(utils.GetPage(c), config.PageSize)
+	data["total"] = service.GetArticlesCount()
 
 	c.JSON(http.StatusOK, gin.H{
 		"code": e.SUCCESS,
@@ -29,11 +30,11 @@ func GetArticleById(c *gin.Context) {
 	var article model.Article
 	id, _ := strconv.Atoi(c.Param("id"))
 
-	if !model.CheckArticlExistById(id) {
+	if !service.CheckArticlExistById(id) {
 		code = e.ERROR_ARTICLE_NOT_EXIST
 	} else {
 		code = e.SUCCESS
-		article = model.GetArticleById(id)
+		article = service.GetArticleById(id)
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -60,7 +61,7 @@ func AddArticle(c *gin.Context) {
 		ModifiedBy: createdBy,
 	}
 
-	model.AddArticle(article)
+	service.AddArticle(article)
 
 	code := e.SUCCESS
 	c.JSON(http.StatusOK, gin.H{
@@ -86,7 +87,7 @@ func UpdateArticle(c *gin.Context) {
 		ModifiedBy: modifiedBy,
 	}
 
-	model.UpdateArticle(id, article)
+	service.UpdateArticle(id, article)
 
 	code := e.SUCCESS
 	c.JSON(http.StatusOK, gin.H{
@@ -100,11 +101,11 @@ func DeleteArticle(c *gin.Context) {
 	var code int
 	id, _ := strconv.Atoi(c.Param("id"))
 
-	if !model.CheckArticlExistById(id) {
+	if !service.CheckArticlExistById(id) {
 		code = e.ERROR_ARTICLE_NOT_EXIST
 	} else {
 		code = e.SUCCESS
-		model.DeleteArticle(id)
+		service.DeleteArticle(id)
 	}
 
 	c.JSON(http.StatusOK, gin.H{

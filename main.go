@@ -6,14 +6,14 @@ import (
 
 	v1 "github.com/yu1er/gin-blog/api/v1"
 	"github.com/yu1er/gin-blog/config"
-	"github.com/yu1er/gin-blog/model"
 	"github.com/yu1er/gin-blog/router"
+	"github.com/yu1er/gin-blog/service"
 )
 
 func init() {
 	config.InitConfig()
 	v1.InitApi()
-	model.InitDB()
+	service.InitDB()
 }
 
 func main() {
