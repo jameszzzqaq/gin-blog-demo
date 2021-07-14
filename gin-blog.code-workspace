@@ -1,0 +1,21 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+			"go.toolsEnvVars": {
+					// "GOPRIVATE": "https://goproxy.cn,direct",
+					"GOPROXY": "https://goproxy.cn,direct",
+					"GONOPROXY": "none",
+					// "GONOSUMDB": "townsy.private-github.com"
+			},
+			"terminal.integrated.env.linux": {
+					// "GOPRIVATE": "github.com/yu1er",
+					"GOPROXY": "https://goproxy.cn,direct",
+					"GONOPROXY": "none",
+					// "GONOSUMDB": "github.com"
+			}
+	}
+}
