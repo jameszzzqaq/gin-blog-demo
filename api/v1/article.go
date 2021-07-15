@@ -1,116 +1,102 @@
 package v1
 
 import (
-	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/yu1er/gin-blog/config"
-	"github.com/yu1er/gin-blog/model"
+	"github.com/yu1er/gin-blog/model/request"
+	"github.com/yu1er/gin-blog/model/response"
 	"github.com/yu1er/gin-blog/pkg/e"
-	"github.com/yu1er/gin-blog/pkg/utils"
 	"github.com/yu1er/gin-blog/service"
 )
 
 func GetArticles(c *gin.Context) {
-	data := make(map[string]interface{})
+	var req request.ArticleListGet
 
-	data["list"] = service.GetArticlesPage(utils.GetPage(1, 2), config.PageSize)
-	data["total"] = service.GetArticlesCount()
+	err := c.ShouldBindJSON(&req)
+	if err != nil {
+		response.Code(e.INVALID_PARAMS, c)
+		return
+	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"code": e.SUCCESS,
-		"msg":  e.GetMsg(e.SUCCESS),
-		"data": data,
-	})
+	list, total, err := service.GetArticlesPage(req)
+	if err != nil {
+		response.Code(e.ERROR_ARTICLE_NOT_EXIST, c)
+	} else {
+		response.OKWithData(response.PageResult{
+			List:     list,
+			Total:    total,
+			PageNum:  req.PageNum,
+			PageSize: req.PageSize,
+		}, c)
+	}
 }
 
 func GetArticleById(c *gin.Context) {
-	var code int
-	var article model.Article
-	id, _ := strconv.Atoi(c.Param("id"))
-
-	if !service.CheckArticlExistById(id) {
-		code = e.ERROR_ARTICLE_NOT_EXIST
-	} else {
-		code = e.SUCCESS
-		article = service.GetArticleById(id)
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		response.Code(e.INVALID_PARAMS, c)
+		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"code": code,
-		"msg":  e.GetMsg(code),
-		"data": article,
-	})
-
+	art, err := service.GetArticleById(id)
+	if err != nil {
+		response.Code(e.ERROR_ARTICLE_NOT_EXIST, c)
+	} else {
+		response.OKWithData(art, c)
+	}
 }
 
 func AddArticle(c *gin.Context) {
-	tagId, _ := strconv.Atoi(c.Query("tag_id"))
-	title := c.Query("title")
-	desc := c.Query("desc")
-	content := c.Query("content")
-	createdBy := c.Query("created_by")
+	var req request.AriticleAdd
 
-	article := model.Article{
-		TagID:      tagId,
-		Title:      title,
-		Desc:       desc,
-		Content:    content,
-		CreatedBy:  createdBy,
-		ModifiedBy: createdBy,
+	err := c.ShouldBindJSON(&req)
+	if err != nil {
+		response.Code(e.INVALID_PARAMS, c)
+		return
 	}
 
-	service.AddArticle(article)
-
-	code := e.SUCCESS
-	c.JSON(http.StatusOK, gin.H{
-		"code": code,
-		"msg":  e.GetMsg(code),
-		// "data": article,
-	})
+	err = service.AddArticle(&req)
+	if err != nil {
+		response.Code(e.ERROR_ARTICLE_NOT_EXIST, c)
+	} else {
+		response.OK(c)
+	}
 }
 
 func UpdateArticle(c *gin.Context) {
-	id, _ := strconv.Atoi(c.Param("id"))
-	tagId, _ := strconv.Atoi(c.Query("tag_id"))
-	title := c.Query("title")
-	desc := c.Query("desc")
-	content := c.Query("content")
-	modifiedBy := c.Query("modified_by")
-
-	article := model.Article{
-		TagID:      tagId,
-		Title:      title,
-		Desc:       desc,
-		Content:    content,
-		ModifiedBy: modifiedBy,
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		response.Code(e.INVALID_PARAMS, c)
+		return
 	}
 
-	service.UpdateArticle(id, article)
+	var req request.ArticleUpdate
+	err = c.ShouldBindJSON(&req)
+	if err != nil {
+		response.Code(e.ERROR_ARTICLE_NOT_EXIST, c)
+		return
+	}
 
-	code := e.SUCCESS
-	c.JSON(http.StatusOK, gin.H{
-		"code": code,
-		"msg":  e.GetMsg(code),
-		// "data": article,
-	})
+	err = service.UpdateArticle(id, &req)
+	if err != nil {
+		response.Code(e.ERROR_ARTICLE_NOT_EXIST, c)
+	} else {
+		response.OK(c)
+	}
 }
 
 func DeleteArticle(c *gin.Context) {
-	var code int
-	id, _ := strconv.Atoi(c.Param("id"))
-
-	if !service.CheckArticlExistById(id) {
-		code = e.ERROR_ARTICLE_NOT_EXIST
-	} else {
-		code = e.SUCCESS
-		service.DeleteArticle(id)
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		response.Code(e.INVALID_PARAMS, c)
+		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"code": code,
-		"msg":  e.GetMsg(code),
-	})
-
+	err = service.DeleteArticle(id)
+	if err != nil {
+		response.Code(e.ERROR_ARTICLE_NOT_EXIST, c)
+	} else {
+		response.OK(c)
+	}
 }
