@@ -4,17 +4,31 @@ import (
 	"errors"
 
 	"github.com/yu1er/gin-blog/model"
+	"github.com/yu1er/gin-blog/model/request"
 	"gorm.io/gorm"
 )
 
-func GetTagsPage(pageNum int, pageSize int, maps interface{}) (tags []model.Tag) {
-	db.Where(maps).Offset(pageNum).Limit(pageSize).Find(&tags)
-	return
+func GetTagsPage(info request.TagListGet) ([]model.Tag, int, error) {
+	var total int64
+	var tags []model.Tag
+
+	limit := info.PageSize
+	offset := info.PageSize * (info.PageNum - 1)
+
+	sql := db.Model(&model.Tag{})
+	if info.Name != "" {
+		sql.Where("name Like ?", "%"+info.Name+"%")
+	}
+
+	_ = sql.Count(&total).Error
+
+	err := sql.Offset(offset).Limit(limit).Find(&tags).Error
+	return tags, int(total), err
 }
 
-func GetTagById(id int) (tag model.Tag) {
-	db.First(&tag, id)
-	return
+func GetTagById(id int) (tag model.Tag, err error) {
+	err = db.First(&tag, id).Error
+	return tag, err
 }
 
 func GetTagsCount(maps interface{}) int {
@@ -34,21 +48,28 @@ func CheckTagExistById(id int) bool {
 	return !errors.Is(err, gorm.ErrRecordNotFound)
 }
 
-func AddTag(name string, state int, createdBy string) {
-	db.Create(&model.Tag{
-		Name:       name,
-		State:      state,
-		CreatedBy:  createdBy,
-		ModifiedBy: createdBy,
-	})
+func AddTag(tp *model.Tag) error {
+	err := db.Create(tp).Error
+	return err
 }
 
-func UpdateTag(id int, tag model.Tag) bool {
-	db.Model(&tag).Updates(tag)
-	return true
+func UpdateTag(id int, tag *model.Tag) error {
+	err := db.Model(&model.Tag{}).Where("id = ?", id).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return err
+	}
+
+	tagMap := map[string]interface{}{
+		"Name":       tag.Name,
+		"State":      tag.State,
+		"ModifiedBy": tag.ModifiedBy,
+	}
+
+	err = db.Model(&model.Tag{}).Where("id = ?", id).Updates(tagMap).Error
+	return err
 }
 
-func DeleteTag(id int) bool {
-	db.Delete(&model.Tag{}, id)
-	return true
+func DeleteTag(id int) error {
+	err := db.Delete(&model.Tag{}, id).Error
+	return err
 }

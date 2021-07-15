@@ -9,10 +9,10 @@ import (
 type Tag struct {
 	Model
 
-	Name       string `json:"name" validate:"max=100"`
-	State      int    `json:"state" validate:"oneof=0 1"`
-	CreatedBy  string `json:"created_by" validate:"max=100"`
-	ModifiedBy string `json:"modified_by" validate:"max=100"`
+	Name       string `json:"name"`
+	State      int    `json:"state"`
+	CreatedBy  string `json:"created_by"`
+	ModifiedBy string `json:"modified_by"`
 }
 
 func (t *Tag) BeforeCreate(tx *gorm.DB) (err error) {

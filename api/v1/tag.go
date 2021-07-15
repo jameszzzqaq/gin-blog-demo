@@ -1,14 +1,15 @@
 package v1
 
 import (
-	"net/http"
+	"fmt"
+	"log"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/yu1er/gin-blog/config"
 	"github.com/yu1er/gin-blog/model"
+	"github.com/yu1er/gin-blog/model/request"
+	"github.com/yu1er/gin-blog/model/response"
 	"github.com/yu1er/gin-blog/pkg/e"
-	"github.com/yu1er/gin-blog/pkg/utils"
 	"github.com/yu1er/gin-blog/service"
 )
 
@@ -20,163 +21,113 @@ import (
 
 // GET 		/tags	获取所有tag
 func GetTags(c *gin.Context) {
-	maps := make(map[string]interface{})
-	data := make(map[string]interface{})
+	var req request.TagListGet
 
-	name := c.Query("name")
-	if name != "" {
-		maps["name"] = name
+	err := c.ShouldBindJSON(&req)
+	if err != nil {
+		response.Code(e.INVALID_PARAMS, c)
+		return
 	}
 
-	var state = -1
-	if s := c.Query("state"); s != "" {
-		state, _ = strconv.Atoi(s)
-		maps["state"] = state
+	list, total, err := service.GetTagsPage(req)
+	if err != nil {
+		response.Code(e.ERROR_TAG_NOT_EXIST, c)
+	} else {
+		response.OKWithData(response.PageResult{
+			List:     list,
+			Total:    total,
+			PageNum:  req.PageNum,
+			PageSize: req.PageSize,
+		}, c)
 	}
-
-	data["list"] = service.GetTagsPage(utils.GetPage(c), config.PageSize, maps)
-	data["total"] = service.GetTagsCount(maps)
-
-	c.JSON(http.StatusOK, gin.H{
-		"code": e.SUCCESS,
-		"msg":  e.GetMsg(e.SUCCESS),
-		"data": data,
-	})
 }
 
 // GET /tag/:id 查询指定tag
 func GetTagById(c *gin.Context) {
-	var code int
-	id, _ := strconv.Atoi(c.Param("id"))
-
-	t := service.GetTagById(id)
-	if t.ID > 0 {
-		code = e.SUCCESS
-	} else {
-		code = e.ERROR_TAG_NOT_EXIST
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		response.Code(e.INVALID_PARAMS, c)
+		return
 	}
-	c.JSON(http.StatusOK, gin.H{
-		"code": code,
-		"msg":  e.GetMsg(code),
-		"data": t,
-	})
+
+	t, err := service.GetTagById(id)
+	if err != nil {
+		response.CodeWithData(e.SUCCESS, t, c)
+	} else {
+		response.Code(e.ERROR_TAG_NOT_EXIST, c)
+	}
 }
 
 // POST 	/tag	新增tag
 func AddTag(c *gin.Context) {
-	name := c.Query("name")
-	state, _ := strconv.Atoi(c.DefaultQuery("state", "0"))
-	createdBy := c.Query("created_by")
+	var req request.TagAdd
+
+	err := c.ShouldBindJSON(&req)
+	if err != nil {
+		fmt.Println(err)
+		response.Code(e.INVALID_PARAMS, c)
+		return
+	}
 
 	tag := model.Tag{
-		Name:       name,
-		State:      state,
-		CreatedBy:  createdBy,
-		ModifiedBy: createdBy,
+		Name:       req.Name,
+		State:      *req.State,
+		CreatedBy:  req.CreatedBy,
+		ModifiedBy: req.CreatedBy,
 	}
 
-	var code int
-	err := validate.Struct(tag)
+	err = service.AddTag(&tag)
 	if err != nil {
-		code = e.INVALID_PARAMS
-	} else if service.CheckTagExistByName(name) {
-		code = e.ERROR_TAT_EXIST
+		response.Code(e.ERROR_TAG_NOT_EXIST, c)
 	} else {
-		code = e.SUCCESS
-		service.AddTag(name, state, createdBy)
+		response.OK(c)
 	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"code": code,
-		"msg":  e.GetMsg(code),
-	})
-
 }
 
 // PUT		/tag/:id	更新指定tag
 func UpdateTag(c *gin.Context) {
-	var tag model.Tag
-	var code int
 
-	id, _ := strconv.Atoi(c.Param("id"))
+	var req request.TagUpdate
 
-	// id
-	err := validate.Var(id, "required,gt=0")
+	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		code = e.ERROR_TAG_ID_INVALID
-		goto response
-	}
-	tag.ID = id
-
-	// state
-	if arg := c.Query("state"); arg != "" {
-		state, _ := strconv.Atoi(arg)
-		err = validate.Var(state, "oneof=0 1")
-		if err != nil {
-			code = e.ERROR_TAG_STATE_INVALID
-			goto response
-		}
-		tag.State = state
+		response.Code(e.INVALID_PARAMS, c)
+		return
 	}
 
-	// name
-	if name := c.Query("name"); name != "" {
-		err = validate.Var(name, "max=100")
-		if err != nil {
-			code = e.ERROR_TAG_NAME_OVERSIZE
-			goto response
-		}
-
-		tag.Name = name
-	}
-
-	if modifiedBy := c.Query("modified_by"); modifiedBy != "" {
-		validate.Var(modifiedBy, "max=100")
-		if err != nil {
-			code = e.ERROR_TAG_MODIFIED_BY_INVALID
-			goto response
-		}
-		tag.ModifiedBy = modifiedBy
-	}
-
-	err = validate.Struct(tag)
+	err = c.ShouldBindJSON(&req)
 	if err != nil {
-		code = e.INVALID_PARAMS
-	} else if service.CheckTagExistById(id) {
-		code = e.SUCCESS
-		service.UpdateTag(id, tag)
+		log.Println(err)
+		response.Code(e.INVALID_PARAMS, c)
+		return
+	}
+
+	tag := model.Tag{
+		Name:       req.Name,
+		State:      *req.State,
+		ModifiedBy: req.ModifiedBy,
+	}
+
+	err = service.UpdateTag(id, &tag)
+	if err != nil {
+		response.Code(e.ERROR_TAG_NOT_EXIST, c)
 	} else {
-		code = e.ERROR_TAG_NOT_EXIST
+		response.OK(c)
 	}
-
-response:
-	c.JSON(http.StatusOK, gin.H{
-		"code": code,
-		"msg":  e.GetMsg(code),
-	})
-
 }
 
 func DeleteTag(c *gin.Context) {
-	var code int
-	id, _ := strconv.Atoi(c.Param("id"))
 
-	err := validate.Var(id, "required,gt=0")
+	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		code = e.ERROR_TAG_ID_INVALID
-		goto response
+		response.Code(e.INVALID_PARAMS, c)
+		return
 	}
 
-	if service.CheckTagExistById(id) {
-		code = e.SUCCESS
-		service.DeleteTag(id)
+	err = service.DeleteTag(id)
+	if err != nil {
+		response.Code(e.ERROR_TAG_NOT_EXIST, c)
 	} else {
-		code = e.ERROR_TAG_NOT_EXIST
+		response.OK(c)
 	}
-
-response:
-	c.JSON(http.StatusOK, gin.H{
-		"code": code,
-		"msg":  e.GetMsg(code),
-	})
 }

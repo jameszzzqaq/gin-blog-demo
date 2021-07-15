@@ -15,7 +15,7 @@ import (
 func GetArticles(c *gin.Context) {
 	data := make(map[string]interface{})
 
-	data["list"] = service.GetArticlesPage(utils.GetPage(c), config.PageSize)
+	data["list"] = service.GetArticlesPage(utils.GetPage(1, 2), config.PageSize)
 	data["total"] = service.GetArticlesCount()
 
 	c.JSON(http.StatusOK, gin.H{

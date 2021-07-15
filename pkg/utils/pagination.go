@@ -1,17 +1,24 @@
 package utils
 
 import (
-	"strconv"
-
-	"github.com/gin-gonic/gin"
 	"github.com/yu1er/gin-blog/config"
 )
 
-func GetPage(c *gin.Context) int {
-	page, _ := strconv.Atoi(c.Query("page"))
-	if page == 0 {
-		page = 1
+func GetPage(page ...int) int {
+	pageNum := 0
+	pageSize := config.PageSize
+
+	if len(page) > 0 {
+		pageNum = page[0]
 	}
 
-	return (page - 1) * config.PageSize
+	if len(page) == 2 {
+		pageSize = page[1]
+	}
+
+	if pageNum == 0 {
+		pageNum = 1
+	}
+
+	return (pageNum - 1) * pageSize
 }
