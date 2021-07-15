@@ -19,7 +19,17 @@ func TestGetTagsPage(t *testing.T) {
 		want1 int
 	}{
 		// TODO: Add test cases.
-		{"test", args{request.TagListGet{request.Page{0, 2}, ""}}, nil, 10},
+		{"test",
+			args{
+				request.TagListGet{
+					Page: request.Page{
+						PageNum:  0,
+						PageSize: 2,
+					},
+					Name: ""},
+			},
+			nil,
+			10},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
