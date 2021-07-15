@@ -17,5 +17,11 @@
 					"GONOPROXY": "none",
 					// "GONOSUMDB": "github.com"
 			}
+	},
+	"launch": {
+		"version": "0.2.0",
+		"configurations": [
+		
+		]
 	}
 }

@@ -12,6 +12,10 @@ import (
 
 var db *gorm.DB // db
 
+func init() {
+	InitDB()
+}
+
 func InitDB() {
 
 	sec, err := config.Cfg.GetSection("database")

@@ -7,8 +7,8 @@ import (
 	"gorm.io/gorm"
 )
 
-func CheckAuth(username, password string) bool {
-	var auth model.Auth
-	err := db.Where("username = ? AND password = ?", username, password).First(&auth).Error
+func CheckAuthExist(a *model.Auth) bool {
+	var auth = &model.Auth{}
+	err := db.First(auth, "username = ? AND password = ?", a.Username, a.Password).Error
 	return !errors.Is(err, gorm.ErrRecordNotFound)
 }

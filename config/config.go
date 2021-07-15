@@ -23,12 +23,16 @@ var (
 	JwtSecret string
 )
 
+func init() {
+	InitConfig()
+}
+
 func InitConfig() {
 
 	var err error
-	Cfg, err = ini.Load("app.ini")
+	Cfg, err = ini.Load("/home/yuler/code/go-app/gin-blog/app.ini")
 	if err != nil {
-		log.Fatalf("Fail to parse 'conf/app.ini': %v", err)
+		log.Fatalf("Fail to parse config file 'app.ini': %v", err)
 	}
 
 	LoadBase()
